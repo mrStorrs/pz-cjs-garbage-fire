@@ -1,6 +1,6 @@
 CJSGarbageFire = CJSGarbageFire or {}
 
-CJSGarbageFire.version = "0.1.0"
+CJSGarbageFire.version = "0.1.1"
 CJSGarbageFire.commandModule = "CJSGarbageFire"
 CJSGarbageFire.modDataKey = "CJS_GarbageFire"
 CJSGarbageFire.maxFuelMinutes = 180
@@ -51,6 +51,19 @@ end
 
 local function hasText(value)
     return value ~= nil and value ~= false and tostring(value) ~= ""
+end
+
+local function itemUsesRemaining(item)
+    local uses = tonumber(CJSGarbageFire.call(item, "getCurrentUses") or 0)
+    if uses and uses > 0 then return uses end
+
+    uses = tonumber(CJSGarbageFire.call(item, "getDrainableUsesInt") or 0)
+    if uses and uses > 0 then return uses end
+
+    local floatUses = tonumber(CJSGarbageFire.call(item, "getCurrentUsesFloat") or 0)
+    if floatUses and floatUses > 0 then return math.max(1, math.ceil(floatUses)) end
+
+    return 0
 end
 
 local function spriteProperties(object)
@@ -122,9 +135,7 @@ function CJSGarbageFire.isTrashCanObject(object)
 end
 
 local function isDrainableWithUses(item)
-    if CJSGarbageFire.call(item, "IsDrainable") then
-        return tonumber(CJSGarbageFire.call(item, "getDrainableUsesInt") or 0) > 0
-    end
+    if CJSGarbageFire.call(item, "IsDrainable") then return itemUsesRemaining(item) > 0 end
 
     return true
 end
@@ -149,24 +160,73 @@ function CJSGarbageFire.isRagItem(item)
     return ragTypes[CJSGarbageFire.call(item, "getType")] == true
 end
 
-function CJSGarbageFire.isRagOrClothing(item)
-    if CJSGarbageFire.isRagItem(item) then return true end
+local function clothingCanBurnAsTinder(item)
     if not item then return false end
-    if CJSGarbageFire.call(item, "isFavorite") then return false end
+    if not CJSGarbageFire.call(item, "IsClothing") then return false end
+    if CJSGarbageFire.call(item, "isEquipped") then return false end
 
-    if CJSGarbageFire.call(item, "IsClothing") then
-        if CJSGarbageFire.call(item, "isEquipped") then return false end
-        return hasText(CJSGarbageFire.call(item, "getFabricType"))
+    local fabricType = CJSGarbageFire.call(item, "getFabricType")
+    if not hasText(fabricType) or tostring(fabricType) == "Leather" then return false end
+
+    return tonumber(CJSGarbageFire.call(item, "getWetness") or 0) <= 0
+end
+
+local function genericItemCanBurn(item)
+    if not item then return false end
+    if CJSGarbageFire.call(item, "IsClothing") then return clothingCanBurnAsTinder(item) end
+
+    local fluidContainer = CJSGarbageFire.call(item, "getFluidContainer")
+    if fluidContainer and tonumber(CJSGarbageFire.call(fluidContainer, "getAmount") or 0) > 0 then
+        return false
+    end
+
+    if instanceof and instanceof(item, "InventoryContainer") then
+        local inventory = CJSGarbageFire.call(item, "getInventory")
+        if inventory and CJSGarbageFire.call(inventory, "isEmpty") ~= true then
+            return false
+        end
+    end
+
+    return true
+end
+
+local function hasTinderValue(itemType, category)
+    if campingLightFireType and campingLightFireType[itemType] and campingLightFireType[itemType] ~= 0 then
+        return true
+    end
+
+    if campingLightFireCategory and campingLightFireCategory[category] and campingLightFireCategory[category] ~= 0 then
+        return true
     end
 
     return false
+end
+
+function CJSGarbageFire.isTinderItem(item)
+    if not item then return false end
+    if CJSGarbageFire.call(item, "isFavorite") then return false end
+    if CJSGarbageFire.isRagItem(item) then return true end
+
+    local itemType = CJSGarbageFire.call(item, "getType")
+    local category = CJSGarbageFire.call(item, "getCategory")
+
+    if CJSGarbageFire.call(item, "hasTag", "NotFireTinder") then return false end
+    if CJSGarbageFire.call(item, "hasTag", "IsFireTinder") then return genericItemCanBurn(item) end
+    if hasTinderValue(itemType, category) then return genericItemCanBurn(item) end
+    if clothingCanBurnAsTinder(item) then return true end
+
+    return false
+end
+
+function CJSGarbageFire.isRagOrClothing(item)
+    return CJSGarbageFire.isTinderItem(item)
 end
 
 function CJSGarbageFire.fuelItemUses(item)
     if not item then return 0 end
     if not CJSGarbageFire.call(item, "IsDrainable") then return 1 end
 
-    local uses = tonumber(CJSGarbageFire.call(item, "getDrainableUsesInt") or 0)
+    local uses = itemUsesRemaining(item)
     if uses < 1 then return 1 end
     return uses
 end

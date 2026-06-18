@@ -10,7 +10,7 @@ function CJSBurnTrashAction:isValid()
 
     local inventory = self.character:getInventory()
     return inventory:contains(self.starter) and inventory:contains(self.tinder) and
-        CJSGarbageFire.isStarterItem(self.starter) and CJSGarbageFire.isRagOrClothing(self.tinder)
+        CJSGarbageFire.isStarterItem(self.starter) and CJSGarbageFire.isTinderItem(self.tinder)
 end
 
 function CJSBurnTrashAction:waitToStart()

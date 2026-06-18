@@ -55,12 +55,29 @@ local function findTrashCan(worldobjects)
 end
 
 local function firstStarter(playerObj)
+    local containers = ISInventoryPaneContextMenu.getContainers(playerObj)
+    if containers then
+        for index = 1, containers:size() do
+            local container = containers:get(index - 1)
+            local item = container and container:getFirstEvalRecurse(CJSGarbageFire.isStarterItem)
+            if item then return item end
+        end
+    end
+
     return playerObj:getInventory():getFirstEvalRecurse(CJSGarbageFire.isStarterItem)
 end
 
 local function firstTinder(playerObj)
-    return playerObj:getInventory():getFirstEvalRecurse(CJSGarbageFire.isRagItem) or
-        playerObj:getInventory():getFirstEvalRecurse(CJSGarbageFire.isRagOrClothing)
+    local containers = ISInventoryPaneContextMenu.getContainers(playerObj)
+    if containers then
+        for index = 1, containers:size() do
+            local container = containers:get(index - 1)
+            local item = container and container:getFirstEvalRecurse(CJSGarbageFire.isTinderItem)
+            if item then return item end
+        end
+    end
+
+    return playerObj:getInventory():getFirstEvalRecurse(CJSGarbageFire.isTinderItem)
 end
 
 local function tooltip(option, name, description)
@@ -68,6 +85,18 @@ local function tooltip(option, name, description)
     tip:setName(name)
     tip.description = description
     option.toolTip = tip
+end
+
+local function unavailableDescription(starter, tinder)
+    if not starter and not tinder then
+        return "Requires a fire starter and a rag, ripped cloth, or dry unequipped fabric clothing."
+    end
+
+    if not starter then
+        return "Requires a usable fire starter such as matches, a lighter, or another StartFire item."
+    end
+
+    return "Requires a rag, ripped cloth, or dry unequipped fabric clothing."
 end
 
 local function removeVanillaCampfireOptions(context)
@@ -138,7 +167,7 @@ local function onFillWorldObjectContextMenu(player, context, worldobjects, test)
 
     if not starter or not tinder then
         option.notAvailable = true
-        tooltip(option, "Burn Trash", "Requires a fire starter and a rag or unequipped piece of clothing.")
+        tooltip(option, "Burn Trash", unavailableDescription(starter, tinder))
     end
 end
 
