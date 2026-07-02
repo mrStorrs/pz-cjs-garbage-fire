@@ -76,24 +76,15 @@ function CJSGarbageFire.propertyIs(object, name)
     local props = spriteProperties(object)
     if not props then return false end
 
-    local ok, result = pcall(function()
-        return props:Is(name)
-    end)
-
-    return ok and result == true
+    return props:has(name) == true
 end
 
 function CJSGarbageFire.propertyValue(object, name)
     local props = spriteProperties(object)
     if not props then return nil end
 
-    local ok, result = pcall(function()
-        if not props:Is(name) then return nil end
-        return props:Val(name)
-    end)
-
-    if ok then return result end
-    return nil
+    if not props:has(name) then return nil end
+    return props:get(name)
 end
 
 function CJSGarbageFire.objectDisplayName(object)
@@ -144,7 +135,8 @@ function CJSGarbageFire.isStarterItem(item)
     if not item then return false end
 
     local itemType = CJSGarbageFire.call(item, "getType")
-    local tagged = CJSGarbageFire.call(item, "hasTag", "StartFire") == true
+    local startFireTag = ItemTag and ItemTag.START_FIRE
+    local tagged = startFireTag and item:hasTag(startFireTag) == true
 
     if tagged or itemType == "Lighter" or itemType == "Matches" then
         return isDrainableWithUses(item)
