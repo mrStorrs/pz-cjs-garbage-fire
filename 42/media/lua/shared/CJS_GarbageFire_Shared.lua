@@ -53,6 +53,25 @@ local function hasText(value)
     return value ~= nil and value ~= false and tostring(value) ~= ""
 end
 
+local resolvedItemTags = {}
+local missingItemTag = {}
+
+local function resolveItemTag(registryId)
+    if not (ItemTag and ResourceLocation and registryId) then return nil end
+
+    local cached = resolvedItemTags[registryId]
+    if cached == missingItemTag then return nil end
+    if cached ~= nil then return cached end
+
+    local tag = ItemTag.get(ResourceLocation.of(registryId))
+    resolvedItemTags[registryId] = tag or missingItemTag
+    return tag
+end
+
+local function itemHasTag(item, tag)
+    return item ~= nil and tag ~= nil and item:hasTag(tag) == true
+end
+
 local function itemUsesRemaining(item)
     local uses = tonumber(CJSGarbageFire.call(item, "getCurrentUses") or 0)
     if uses and uses > 0 then return uses end
@@ -135,8 +154,7 @@ function CJSGarbageFire.isStarterItem(item)
     if not item then return false end
 
     local itemType = CJSGarbageFire.call(item, "getType")
-    local startFireTag = ItemTag and ItemTag.START_FIRE
-    local tagged = startFireTag and item:hasTag(startFireTag) == true
+    local tagged = itemHasTag(item, ItemTag and ItemTag.START_FIRE)
 
     if tagged or itemType == "Lighter" or itemType == "Matches" then
         return isDrainableWithUses(item)
@@ -202,8 +220,8 @@ function CJSGarbageFire.isTinderItem(item)
     local itemType = CJSGarbageFire.call(item, "getType")
     local category = CJSGarbageFire.call(item, "getCategory")
 
-    if CJSGarbageFire.call(item, "hasTag", "NotFireTinder") then return false end
-    if CJSGarbageFire.call(item, "hasTag", "IsFireTinder") then return genericItemCanBurn(item) end
+    if itemHasTag(item, resolveItemTag("NotFireTinder")) then return false end
+    if itemHasTag(item, ItemTag and ItemTag.IS_FIRE_TINDER) then return genericItemCanBurn(item) end
     if hasTinderValue(itemType, category) then return genericItemCanBurn(item) end
     if clothingCanBurnAsTinder(item) then return true end
 
