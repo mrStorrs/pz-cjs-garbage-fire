@@ -1,0 +1,6 @@
+Sandbox_EN = {
+    Sandbox_CJSGarbageFire = "CJS Garbage Fire",
+
+    Sandbox_CJSGarbageFire_IncineratorScanSeconds = "Incinerator Scan Seconds",
+    Sandbox_CJSGarbageFire_IncineratorScanSeconds_tooltip = "How often burning trash cans check for newly added contents. Lower values react faster; higher values reduce server work.",
+}

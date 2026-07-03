@@ -1,13 +1,33 @@
 CJSGarbageFire = CJSGarbageFire or {}
 
-CJSGarbageFire.version = "0.1.3"
+CJSGarbageFire.version = "0.1.4"
 CJSGarbageFire.commandModule = "CJSGarbageFire"
 CJSGarbageFire.modDataKey = "CJS_GarbageFire"
-CJSGarbageFire.incineratorScanSeconds = 30
+CJSGarbageFire.incineratorScanSeconds = 10
+CJSGarbageFire.minIncineratorScanSeconds = 1
+CJSGarbageFire.maxIncineratorScanSeconds = 300
 CJSGarbageFire.maxFuelMinutes = 180
 CJSGarbageFire.minFuelMinutes = 5
 
 local unpackArgs = unpack or table.unpack
+
+local function clamp(value, minValue, maxValue)
+    value = tonumber(value)
+    if value == nil then return minValue end
+    if value < minValue then return minValue end
+    if value > maxValue then return maxValue end
+    return value
+end
+
+function CJSGarbageFire.scanIntervalSeconds()
+    local value = CJSGarbageFire.incineratorScanSeconds
+    local vars = SandboxVars and SandboxVars.CJSGarbageFire
+    if vars and vars.IncineratorScanSeconds ~= nil then
+        value = vars.IncineratorScanSeconds
+    end
+
+    return math.floor(clamp(value, CJSGarbageFire.minIncineratorScanSeconds, CJSGarbageFire.maxIncineratorScanSeconds))
+end
 
 local ragTypes = {
     AlcoholRippedSheets = true,

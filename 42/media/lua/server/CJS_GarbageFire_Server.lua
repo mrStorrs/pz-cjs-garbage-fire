@@ -222,7 +222,8 @@ local function incineratorTick()
     if deltaSeconds <= 0 then return end
 
     incineratorElapsedSeconds = incineratorElapsedSeconds + deltaSeconds
-    if incineratorElapsedSeconds < CJSGarbageFire.incineratorScanSeconds then return end
+    local scanSeconds = CJSGarbageFire.scanIntervalSeconds()
+    if incineratorElapsedSeconds < scanSeconds then return end
 
     incineratorElapsedSeconds = 0
     sweepBurningGarbageFires()
