@@ -1,7 +1,7 @@
 name=CJS Garbage Fire
 id=cjsGarbageFire
-description=Lets players burn trash inside garbage cans with a fire starter and rag or clothing.
+description=Lets players burn trash inside garbage cans with a fire starter and rag or clothing, then keep incinerating newly added contents.
 poster=poster.png
 author=CJ Storrs
-modversion=0.1.1
+modversion=0.1.2
 versionMin=42.0.0

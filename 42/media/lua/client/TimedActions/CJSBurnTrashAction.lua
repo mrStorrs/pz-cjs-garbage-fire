@@ -61,11 +61,7 @@ function CJSBurnTrashAction:perform()
 end
 
 function CJSBurnTrashAction:new(character, object, starter, tinder, time)
-    local o = {}
-    setmetatable(o, self)
-    self.__index = self
-
-    o.character = character
+    local o = ISBaseTimedAction.new(self, character)
     o.object = object
     o.starter = starter
     o.tinder = tinder

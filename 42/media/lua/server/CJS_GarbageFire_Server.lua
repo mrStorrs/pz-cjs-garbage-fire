@@ -7,12 +7,38 @@ require "CJS_GarbageFire_Shared"
 
 local originalLowerFirelvl = SCampfireSystem.lowerFirelvl
 local originalFireRadius = SCampfireGlobalObject.fireRadius
+local incineratorElapsedSeconds = 0
 
 local function clampFuelMinutes(minutes)
     minutes = tonumber(minutes) or 0
     if minutes < CJSGarbageFire.minFuelMinutes then return CJSGarbageFire.minFuelMinutes end
     if minutes > CJSGarbageFire.maxFuelMinutes then return CJSGarbageFire.maxFuelMinutes end
     return minutes
+end
+
+local function maxGarbageFireFuelMinutes()
+    local maxFuel = CJSGarbageFire.maxFuelMinutes
+    if getCampingFuelMax then
+        local sandboxMax = tonumber(getCampingFuelMax())
+        if sandboxMax and sandboxMax > 0 then
+            maxFuel = math.min(maxFuel, sandboxMax)
+        end
+    end
+
+    return maxFuel
+end
+
+local function addGarbageFireFuel(campfire, minutes)
+    minutes = tonumber(minutes) or 0
+    if minutes <= 0 then return 0 end
+
+    local currentFuel = tonumber(campfire.fuelAmt) or 0
+    local room = maxGarbageFireFuelMinutes() - currentFuel
+    if room <= 0 then return 0 end
+
+    local addedFuel = math.min(minutes, room)
+    campfire:addFuel(addedFuel)
+    return addedFuel
 end
 
 local function trashFuelMinutes(item)
@@ -39,14 +65,35 @@ end
 
 local function emptyTrashContents(trashCan)
     local container = trashCan and trashCan:getContainer()
-    if not container then return end
+    if not container then return 0 end
 
+    local items = container:getItems()
+    local count = items:size()
+    if count <= 0 then return 0 end
+
+    if isServer() then
+        sendRemoveItemsFromContainer(container, items)
+    end
+    while items:size() > 0 do
+        container:DoRemoveItem(items:get(0))
+    end
     container:clear()
     CJSGarbageFire.call(container, "setDrawDirty", true)
     if trashCan:getOverlaySprite() then
         ItemPicker.updateOverlaySprite(trashCan)
     end
     trashCan:sendObjectChange("emptyTrash")
+    return count
+end
+
+local function burnTrashContents(trashCan, campfire)
+    local container = trashCan and trashCan:getContainer()
+    if not container or container:getItems():size() <= 0 then return 0, 0 end
+
+    local fuelMinutes = trashContentsFuel(container)
+    local itemCount = emptyTrashContents(trashCan)
+    local addedFuel = addGarbageFireFuel(campfire, fuelMinutes)
+    return itemCount, addedFuel
 end
 
 local function findTrashCan(square, objectIndex)
@@ -75,7 +122,16 @@ local function tagCampfire(campfire, trashCan)
     local modData = isoObject:getModData()
     modData[CJSGarbageFire.modDataKey] = true
     modData.CJS_GarbageFireTrashName = CJSGarbageFire.objectDisplayName(trashCan)
+    modData.CJS_GarbageFireTrashObjectIndex = trashCan:getObjectIndex()
     isoObject:transmitModData()
+end
+
+local function trashCanForCampfire(campfire)
+    if not campfire then return nil end
+
+    local isoObject = campfire:getIsoObject()
+    local modData = isoObject and isoObject:getModData()
+    return findTrashCan(campfire:getSquare(), modData and modData.CJS_GarbageFireTrashObjectIndex)
 end
 
 local function startGarbageFire(playerObj, args)
@@ -99,7 +155,7 @@ local function startGarbageFire(playerObj, args)
 
     emptyTrashContents(trashCan)
     tagCampfire(campfire, trashCan)
-    campfire:addFuel(totalFuel)
+    addGarbageFireFuel(campfire, totalFuel)
     campfire:lightFire()
 end
 
@@ -150,6 +206,30 @@ local function cleanupExpiredGarbageFires()
     end
 end
 
+local function sweepBurningGarbageFires()
+    local system = SCampfireSystem.instance
+    if not system then return end
+
+    for index = system:getLuaObjectCount(), 1, -1 do
+        local campfire = system:getLuaObjectByIndex(index)
+        if CJSGarbageFire.isGarbageCampfire(campfire) and campfire.isLit and campfire.fuelAmt > 0 then
+            burnTrashContents(trashCanForCampfire(campfire), campfire)
+        end
+    end
+end
+
+local function incineratorTick()
+    local deltaSeconds = getGameTime():getRealworldSecondsSinceLastUpdate() or 0
+    if deltaSeconds <= 0 then return end
+
+    incineratorElapsedSeconds = incineratorElapsedSeconds + deltaSeconds
+    if incineratorElapsedSeconds < CJSGarbageFire.incineratorScanSeconds then return end
+
+    incineratorElapsedSeconds = 0
+    sweepBurningGarbageFires()
+end
+
 Events.OnClientCommand.Add(onClientCommand)
+Events.OnTick.Add(incineratorTick)
 Events.EveryOneMinute.Add(cleanupExpiredGarbageFires)
 print("[cjsGarbageFire] Loaded server " .. CJSGarbageFire.version)

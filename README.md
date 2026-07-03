@@ -8,3 +8,5 @@ The action requires:
 - A rag, ripped cloth, denim/leather strip, or unequipped clothing item with fabric
 
 The mod creates a tagged campfire object on the garbage can square, burns the can contents as fuel, keeps the campfire light/noise small, prevents campfire spread for tagged garbage fires, and removes the campfire object when it burns out.
+
+While the trash fire is burning, the server checks tagged garbage fires every 30 seconds. Any new contents added to the same trash can are destroyed and counted as additional capped fuel for that fire.

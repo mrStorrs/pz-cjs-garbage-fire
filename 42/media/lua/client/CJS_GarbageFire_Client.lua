@@ -1,4 +1,4 @@
-require "Camping/ISUI/ISCampingMenu"
+require "Camping/ISCampingMenu"
 require "Camping/TimedActions/ISPutOutCampfireAction"
 require "CJS_GarbageFire_Shared"
 require "TimedActions/CJSBurnTrashAction"
@@ -118,7 +118,7 @@ end
 local function putOutTrashFire(playerObj, campfire)
     if not campfire or not campfire:getSquare() then return end
     if ISCampingMenu.walkToCampfire(playerObj, campfire:getSquare()) then
-        ISTimedActionQueue.add(ISPutOutCampfireAction:new(playerObj, campfire, 60))
+        ISTimedActionQueue.add(ISPutOutCampfireAction:new(playerObj, campfire))
     end
 end
 
