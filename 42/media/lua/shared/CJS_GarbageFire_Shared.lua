@@ -1,6 +1,6 @@
 CJSGarbageFire = CJSGarbageFire or {}
 
-CJSGarbageFire.version = "0.1.2"
+CJSGarbageFire.version = "0.1.3"
 CJSGarbageFire.commandModule = "CJSGarbageFire"
 CJSGarbageFire.modDataKey = "CJS_GarbageFire"
 CJSGarbageFire.incineratorScanSeconds = 30

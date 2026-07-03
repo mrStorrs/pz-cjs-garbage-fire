@@ -82,7 +82,6 @@ local function emptyTrashContents(trashCan)
     if trashCan:getOverlaySprite() then
         ItemPicker.updateOverlaySprite(trashCan)
     end
-    trashCan:sendObjectChange("emptyTrash")
     return count
 end
 
@@ -153,10 +152,10 @@ local function startGarbageFire(playerObj, args)
     local campfire = SCampfireSystem.instance:addCampfire(square)
     if not campfire then return end
 
-    emptyTrashContents(trashCan)
     tagCampfire(campfire, trashCan)
     addGarbageFireFuel(campfire, totalFuel)
     campfire:lightFire()
+    emptyTrashContents(trashCan)
 end
 
 local function onClientCommand(module, command, playerObj, args)
