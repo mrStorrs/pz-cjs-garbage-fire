@@ -54,30 +54,26 @@ local function findTrashCan(worldobjects)
     return nil
 end
 
-local function firstStarter(playerObj)
+local function firstAccessibleItem(playerObj, predicate)
     local containers = ISInventoryPaneContextMenu.getContainers(playerObj)
     if containers then
         for index = 1, containers:size() do
             local container = containers:get(index - 1)
-            local item = container and container:getFirstEvalRecurse(CJSGarbageFire.isStarterItem)
+            local item = container and container:getFirstEvalRecurse(predicate)
             if item then return item end
         end
     end
 
-    return playerObj:getInventory():getFirstEvalRecurse(CJSGarbageFire.isStarterItem)
+    return playerObj:getInventory():getFirstEvalRecurse(predicate)
+end
+
+local function firstStarter(playerObj)
+    return firstAccessibleItem(playerObj, CJSGarbageFire.isStarterItem)
 end
 
 local function firstTinder(playerObj)
-    local containers = ISInventoryPaneContextMenu.getContainers(playerObj)
-    if containers then
-        for index = 1, containers:size() do
-            local container = containers:get(index - 1)
-            local item = container and container:getFirstEvalRecurse(CJSGarbageFire.isTinderItem)
-            if item then return item end
-        end
-    end
-
-    return playerObj:getInventory():getFirstEvalRecurse(CJSGarbageFire.isTinderItem)
+    return firstAccessibleItem(playerObj, CJSGarbageFire.isRagItem) or
+        firstAccessibleItem(playerObj, CJSGarbageFire.isTinderItem)
 end
 
 local function tooltip(option, name, description)

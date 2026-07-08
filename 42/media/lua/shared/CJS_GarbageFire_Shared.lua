@@ -1,9 +1,9 @@
 CJSGarbageFire = CJSGarbageFire or {}
 
-CJSGarbageFire.version = "0.1.4"
+CJSGarbageFire.version = "0.1.5"
 CJSGarbageFire.commandModule = "CJSGarbageFire"
 CJSGarbageFire.modDataKey = "CJS_GarbageFire"
-CJSGarbageFire.incineratorScanSeconds = 10
+CJSGarbageFire.incineratorScanSeconds = 8
 CJSGarbageFire.minIncineratorScanSeconds = 1
 CJSGarbageFire.maxIncineratorScanSeconds = 300
 CJSGarbageFire.maxFuelMinutes = 180
